@@ -27,7 +27,7 @@ import freenet.support.api.HTTPRequest;
 
 public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredPluginHTTP {
 
-	public static String SELF_URI = "/plugins/plugins.IndexBrowser.IndexBrowser/";
+	public static String SELF_URI = "/plugins/plugins.ThawIndexBrowser.ThawIndexBrowser/";
 
 	private PluginRespirator pr;
 
