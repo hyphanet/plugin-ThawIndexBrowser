@@ -1,14 +1,12 @@
 package plugins.ThawIndexBrowser;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.util.Enumeration;
 
-import nu.xom.Builder;
-import nu.xom.Document;
-import nu.xom.Element;
-import nu.xom.Elements;
-import nu.xom.ParsingException;
-import nu.xom.ValidityException;
+import plugins.ThawIndexBrowser.nanoxml.XMLElement;
+import plugins.ThawIndexBrowser.nanoxml.XMLParseException;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
@@ -29,7 +27,7 @@ import freenet.support.api.HTTPRequest;
 
 public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredPluginHTTP {
 
-	public static String SELF_URI = "/plugins/plugins.ThawIndexBrowser.ThawIndexBrowser/";
+	public static String SELF_URI = "/plugins/plugins.IndexBrowser.IndexBrowser/";
 
 	private PluginRespirator pr;
 
@@ -145,19 +143,19 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 			FetchResult content = client.fetch(uri, 90000);
 			String mime = content.getMimeType();
 			if (!"application/x-freenet-index".equals(mime)) {
-				return makeErrorPage("Wrong mime type: " + mime, "Expectedmime type \"application/x-freenet-index\", but found \""
+				return makeErrorPage("Wrong mime type: " + mime, "Expected mime type \"application/x-freenet-index\", but found \""
 						+ mime + "\".");
 			}
 
 			// data here, parse xml
 
-			Builder builder = new Builder();
+			XMLElement xmldoc = new XMLElement();
 
-			Document doc = builder.build(content.asBucket().getInputStream());
+			xmldoc.parseFromReader(new InputStreamReader(content.asBucket().getInputStream()));
 
 			// now print the result...
 
-			return printIndexPage(uri, doc, add);
+			return printIndexPage(uri, xmldoc, add);
 
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Invalid URI: " + index, e);
@@ -180,10 +178,7 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 		} catch (IOException e) {
 			Logger.error(this, "IOError", e);
 			return makeErrorPage("IOError", "IOError while processing " + index + ": " + e.getLocalizedMessage());
-		} catch (ValidityException e) {
-			Logger.error(this, "DEBUG", e);
-			return makeErrorPage("Parser error", "Error while processing " + index + ": " + e.getLocalizedMessage());
-		} catch (ParsingException e) {
+		} catch (XMLParseException e) {
 			Logger.error(this, "DEBUG", e);
 			return makeErrorPage("Parser error", "Error while processing " + index + ": " + e.getLocalizedMessage());
 		} catch (Exception e) {
@@ -206,101 +201,134 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 		return browseBox;
 	}
 
-	private String printIndexPage(FreenetURI uri, Document doc, boolean add) {
+	private String printIndexPage(FreenetURI uri, XMLElement doc, boolean add) {
 		HTMLNode pageNode = pm.getPageNode("Index Browser", null);
 		HTMLNode contentNode = pm.getContentNode(pageNode);
 
-		Element root = doc.getRootElement();
-		Element header = root.getFirstChildElement("header");
+		XMLElement root = doc;
 
 		HTMLNode titleBox = pm.getInfobox("Index: " + uri);
-		Element titelelement = header.getFirstChildElement("title");
-		if (titelelement != null) {
-			titleBox.addChild("#", "Titel: \u00a0 " + titelelement.getValue());
-			titleBox.addChild("BR");
-		}
+		HTMLNode indexBox = pm.getInfobox("Links:");
+		HTMLNode fileBox = pm.getInfobox("Files:");
 
-		Element clientelement = header.getFirstChildElement("client");
-		if (clientelement != null) {
-			titleBox.addChild("#", "Client: \u00a0 " + clientelement.getValue());
-			titleBox.addChild("BR");
-		}
+		HTMLNode table = new HTMLNode("table", "class", "requests");
+		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
+		headerRow.addChild("th");
+		headerRow.addChild("th", "Key/Name");
+		headerRow.addChild("th", "Mimetype");
+		headerRow.addChild("th", "Size");
 
-		Element dateelement = header.getFirstChildElement("date");
-		if (dateelement != null) {
-			titleBox.addChild("#", "Date: \u00a0 " + dateelement.getValue());
-			titleBox.addChild("BR");
+		boolean hasfiles = false;
+
+		Enumeration rootchilds = root.enumerateChildren();
+
+		while (rootchilds.hasMoreElements()) {
+			XMLElement rc = (XMLElement) rootchilds.nextElement();
+			String name = rc.getName();
+			if ("header".equals(name)) {
+				Enumeration headerchilds = rc.enumerateChildren();
+				String titel = null;
+				String clientname = null;
+				String date = null;
+				String category = null;
+				while (headerchilds.hasMoreElements()) {
+					XMLElement he = (XMLElement) headerchilds.nextElement();
+					String hename = he.getName();
+					if ("title".equals(hename)) {
+						titel = he.getContent();
+					} else if ("client".equals(hename)) {
+						clientname = he.getContent();
+					} else if ("date".equals(hename)) {
+						date = he.getContent();
+					} else if ("category".equals(hename)) {
+						category = he.getContent();
+					} else {
+						Logger
+								.error(this, "Unexpected xml element '" + hename + "' at line: " + rc.getLineNr(), new Error(
+										"DEBUG"));
+					}
+				}
+
+				if (titel != null) {
+					titleBox.addChild("#", "Titel: \u00a0 " + titel);
+					titleBox.addChild("BR");
+				}
+				if (clientname != null) {
+					titleBox.addChild("#", "Client: \u00a0 " + clientname);
+					titleBox.addChild("BR");
+				}
+				if (date != null) {
+					titleBox.addChild("#", "Date: \u00a0 " + date);
+					titleBox.addChild("BR");
+				}
+				if (category != null) {
+					titleBox.addChild("#", "Category: \u00a0 " + category);
+					titleBox.addChild("BR");
+				}
+
+			} else if ("indexes".equals(name)) {
+				Enumeration indexchilds = rc.enumerateChildren();
+				while (indexchilds.hasMoreElements()) {
+					XMLElement ie = (XMLElement) indexchilds.nextElement();
+					indexBox.addChild(new HTMLNode("a", "href", SELF_URI + "?key=" + ie.getStringAttribute("key"), ie
+							.getStringAttribute("key")));
+					indexBox.addChild("BR");
+				}
+
+			} else if ("files".equals(name)) {
+				Enumeration filechilds = rc.enumerateChildren();
+				hasfiles = rc.countChildren() > 0;
+				while (filechilds.hasMoreElements()) {
+					XMLElement fe = (XMLElement) filechilds.nextElement();
+					HTMLNode fileRow = table.addChild("tr");
+					String s = fe.getStringAttribute("key");
+					String s1;
+					try {
+						FreenetURI u = new FreenetURI(s);
+						if (add) {
+							try {
+								fcp.makePersistentGlobalRequest(u, null, "forever", "disk");
+							} catch (NotAllowedException e1) {
+								Logger.error(this, "DEBUG", e1);
+							}
+						}
+
+						if (s.length() > 100) {
+							s1 = s.substring(0, 12);
+							s1 += "...";
+							s1 += s.substring(85);
+							// //s = s1;
+						} else {
+							s1 = s;
+						}
+						fileRow.addChild(createAddCell(s, uri.toString()));
+						fileRow.addChild(createCell(new HTMLNode("a", "href", "/?key=" + s, s1)));
+					} catch (MalformedURLException e1) {
+						fileRow.addChild(new HTMLNode("td"));
+						fileRow.addChild(createCell(new HTMLNode("#", s)));
+					}
+
+					fileRow.addChild(createCell(new HTMLNode("#", fe.getStringAttribute("mime"))));
+					fileRow.addChild(createCell(new HTMLNode("#", fe.getStringAttribute("size"))));
+
+				}
+				HTMLNode allRow = table.addChild("tr");
+				allRow.addChild(createAddAllCell(uri.toString()));
+				fileBox.addChild(table);
+
+			} else if ("comments".equals(name)) {
+
+			} else {
+				Logger.error(this, "Unexpected xml element '" + name + "' at line: " + rc.getLineNr(), new Error("DEBUG"));
+			}
 		}
 
 		contentNode.addChild(titleBox);
-		
-		Element indizies = root.getFirstChildElement("indexes");
+		contentNode.addChild(indexBox);
 
-		if (indizies.getChildCount() > 0) {
-			HTMLNode indexBox = pm.getInfobox("Links:");
-			Elements es = indizies.getChildElements();
-
-			for (int i = 0; i < es.size(); i++) {
-				Element e = es.get(i);
-				indexBox.addChild(new HTMLNode("a", "href", SELF_URI + "?key=" + e.getAttribute("key").getValue(), e.getAttribute(
-						"key").getValue()));
-				indexBox.addChild("BR");
-			}
-			contentNode.addChild(indexBox);
-		}
-
-		Element files = root.getFirstChildElement("files");
-
-		if (files.getChildCount() > 0) {
-			HTMLNode fileBox = pm.getInfobox("Files:");
-			
-			HTMLNode table = new HTMLNode("table", "class", "requests");
-			HTMLNode headerRow = table.addChild("tr", "class", "table-header");
-			headerRow.addChild("th");
-			headerRow.addChild("th", "Key/Name");
-			headerRow.addChild("th", "Mimetype");
-			headerRow.addChild("th", "Size");		
-			
-			Elements es = files.getChildElements();
-
-			for (int i = 0; i < es.size(); i++) {
-				Element e = es.get(i);
-				HTMLNode fileRow = table.addChild("tr");
-				String s = e.getAttribute("key").getValue();
-				String s1;
-				try {
-					FreenetURI u = new FreenetURI(s);
-					if (add) {
-						try {
-							fcp.makePersistentGlobalRequest(u, null, "forever", "disk");
-						} catch (NotAllowedException e1) {
-							Logger.error(this, "DEBUG", e1);
-						}
-						
-					}
-					if (s.length() > 100) {
-						s1 = s.substring(0, 12);
-						s1 += "...";
-						s1 += s.substring(85);
-						//s = s1;
-					} else {
-						s1 = s;
-					}
-					fileRow.addChild(createAddCell(s, uri.toString()));
-					fileRow.addChild(createCell(new HTMLNode("a", "href", "/?key=" + s, s1)));
-				} catch (MalformedURLException e1) {
-					fileRow.addChild(new HTMLNode("td"));
-					fileRow.addChild(createCell(new HTMLNode("#", s)));
-				}
-
-				fileRow.addChild(createCell(new HTMLNode("#", e.getAttribute("mime").getValue())));
-				fileRow.addChild(createCell(new HTMLNode("#", e.getAttribute("size").getValue())));
-			}
-			HTMLNode fileRow = table.addChild("tr");
-			fileRow.addChild(createAddAllCell(uri.toString()));
-			fileBox.addChild(table);
+		if (hasfiles)
 			contentNode.addChild(fileBox);
-		}
+
 		contentNode.addChild(createUriBox());
 		return pageNode.generate();
 	}
