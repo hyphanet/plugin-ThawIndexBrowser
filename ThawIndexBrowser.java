@@ -19,13 +19,14 @@ import freenet.node.fcp.NotAllowedException;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginHTTP;
 import freenet.pluginmanager.FredPluginThreadless;
+import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginHTTPException;
 import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
-public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredPluginHTTP {
+public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredPluginHTTP, FredPluginVersioned {
 
 	public static String SELF_URI = "/plugins/plugins.ThawIndexBrowser.ThawIndexBrowser/";
 
@@ -355,6 +356,10 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 		HTMLNode cell = new HTMLNode("td");
 		cell.addChild(node);
 		return cell;
+	}
+
+	public String getVersion() {
+		return "0.1 "+Version.svnRevision;
 	}
 
 }
