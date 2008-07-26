@@ -368,5 +368,12 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 	public String getVersion() {
 		return "0.1 "+Version.getSvnRevision();
 	}
+	
+	public static void main(String[] args) {
+		ThawIndexBrowser tib = new ThawIndexBrowser();
+		System.out.println("=====");
+		System.out.println(tib.getVersion());
+		System.out.println("=====");		
+	}
 
 }
