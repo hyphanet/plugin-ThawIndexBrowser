@@ -8,5 +8,9 @@ package plugins.ThawIndexBrowser;
  *
  */
 public class Version {
-	public static final String svnRevision = "@custom@";
+	private static final String svnRevision = "@custom@";
+	
+	static String getSvnRevision() {
+		return svnRevision;
+	}
 }

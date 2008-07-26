@@ -366,7 +366,7 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 	}
 
 	public String getVersion() {
-		return "0.1 "+Version.svnRevision;
+		return "0.1 "+Version.getSvnRevision();
 	}
 
 }
