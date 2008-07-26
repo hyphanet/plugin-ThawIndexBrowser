@@ -13,4 +13,10 @@ public class Version {
 	static String getSvnRevision() {
 		return svnRevision;
 	}
+	
+	public static void main(String[] args) {
+		System.out.println("=====");
+		System.out.println(svnRevision);
+		System.out.println("=====");		
+	}
 }
