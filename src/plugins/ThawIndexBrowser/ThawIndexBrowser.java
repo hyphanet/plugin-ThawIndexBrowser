@@ -111,7 +111,7 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 
 	/* pages */
 	private String makeUriPage() {
-		HTMLNode pageNode = pm.getPageNode("Index Browser", null);
+		HTMLNode pageNode = getPageNode();
 		HTMLNode contentNode = pm.getContentNode(pageNode);
 		contentNode.addChild(createUriBox());
 		return pageNode.generate();
@@ -122,7 +122,7 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 	}
 
 	private String makeErrorPage(String title, String error) {
-		HTMLNode pageNode = pm.getPageNode("Index Browser", null);
+		HTMLNode pageNode = getPageNode();
 		HTMLNode contentNode = pm.getContentNode(pageNode);
 		contentNode.addChild(createErrorBox(title, error));
 		contentNode.addChild(createUriBox());
@@ -130,7 +130,7 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 	}
 
 	private String makeErrorPage(String title, String error, String newUri) {
-		HTMLNode pageNode = pm.getPageNode("Index Browser", null);
+		HTMLNode pageNode = getPageNode();
 		HTMLNode contentNode = pm.getContentNode(pageNode);
 		HTMLNode errorBox = createErrorBox(title, error);
 		errorBox.addChild("BR");
@@ -138,6 +138,10 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 		contentNode.addChild(errorBox);
 		contentNode.addChild(createUriBox());
 		return pageNode.generate();
+	}
+
+	private HTMLNode getPageNode() {
+		return pm.getPageNode("Thaw-Index Browser", null);
 	}
 
 	private String makeIndexPage(String index, boolean add) {
@@ -206,7 +210,7 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 	}
 
 	private String printIndexPage(FreenetURI uri, XMLElement doc, boolean add) {
-		HTMLNode pageNode = pm.getPageNode("Index Browser", null);
+		HTMLNode pageNode = getPageNode();
 		HTMLNode contentNode = pm.getContentNode(pageNode);
 
 		XMLElement root = doc;
