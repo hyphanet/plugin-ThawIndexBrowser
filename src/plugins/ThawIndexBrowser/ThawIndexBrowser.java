@@ -14,8 +14,6 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
-import freenet.config.Config;
-import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.NotAllowedException;
@@ -47,13 +45,7 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 
 		pr = pr2;
 
-		// create pagemaker
-
-		Config nc = pr.getNode().config;
-		SubConfig fc = nc.get("fproxy");
-		String cssName = fc.getString("css");
-
-		pm = new PageMaker(cssName);
+		pm = pr.getPageMaker();
 
 		pm.addNavigationLink("/", "Fproxy", "Back to Fpoxy", false, null);
 
