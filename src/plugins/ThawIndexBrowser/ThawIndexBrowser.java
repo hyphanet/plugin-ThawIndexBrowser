@@ -15,10 +15,12 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker;
 import freenet.keys.FreenetURI;
+import freenet.l10n.L10n.LANGUAGE;
 import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.NotAllowedException;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginHTTP;
+import freenet.pluginmanager.FredPluginL10n;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginHTTPException;
@@ -27,7 +29,7 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 
-public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredPluginHTTP, FredPluginVersioned {
+public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredPluginHTTP, FredPluginVersioned, FredPluginL10n {
 
 	public static String SELF_URI = "/plugins/plugins.ThawIndexBrowser.ThawIndexBrowser/";
 
@@ -366,6 +368,15 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 		System.out.println("=====");
 		System.out.println(tib.getVersion());
 		System.out.println("=====");		
+	}
+
+	public String getString(String key) {
+		// TODO
+		return key;
+	}
+
+	public void setLanguage(LANGUAGE newLanguage) {
+		// TODO 		
 	}
 
 }
