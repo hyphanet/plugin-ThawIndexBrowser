@@ -2004,7 +2004,7 @@ public class XMLElement
      *         character.
      * </ul></dd></dl><dl>
      */
-    protected void scanIdentifier(StringBuffer result)
+    protected void scanIdentifier(StringBuilder result)
         throws IOException
     {
         for (;;) {
@@ -2053,7 +2053,7 @@ public class XMLElement
      * <ul><li><code>result != null</code>
      * </ul></dd></dl>
      */
-    protected char scanWhitespace(StringBuffer result)
+    protected char scanWhitespace(StringBuilder result)
         throws IOException
     {
         for (;;) {
@@ -2082,7 +2082,7 @@ public class XMLElement
      *     <li>the next char read is the string delimiter
      * </ul></dd></dl>
      */
-    protected void scanString(StringBuffer string)
+    protected void scanString(StringBuilder string)
         throws IOException
     {
         char delimiter = this.readChar();
@@ -2111,7 +2111,7 @@ public class XMLElement
      * <ul><li><code>data != null</code>
      * </ul></dd></dl>
      */
-    protected void scanPCData(StringBuffer data)
+    protected void scanPCData(StringBuilder data)
         throws IOException
     {
         for (;;) {
@@ -2142,7 +2142,7 @@ public class XMLElement
      *     <li>The first &lt; has already been read.
      * </ul></dd></dl>
      */
-    protected boolean checkCDATA(StringBuffer buf)
+    protected boolean checkCDATA(StringBuilder buf)
         throws IOException
     {
         char ch = this.readChar();
@@ -2335,7 +2335,7 @@ public class XMLElement
     protected void scanElement(XMLElement elt)
         throws IOException
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         this.scanIdentifier(buf);
         String name = buf.toString();
         elt.setName(name);
@@ -2450,11 +2450,11 @@ public class XMLElement
      *     <li><code>buf != null</code>
      * </ul></dd></dl>
      */
-    protected void resolveEntity(StringBuffer buf)
+    protected void resolveEntity(StringBuilder buf)
         throws IOException
     {
         char ch = '\0';
-        StringBuffer keyBuf = new StringBuffer();
+        StringBuilder keyBuf = new StringBuilder();
         for (;;) {
             ch = this.readChar();
             if (ch == ';') {
