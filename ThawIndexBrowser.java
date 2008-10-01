@@ -99,10 +99,6 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 		}
 	}
 
-	public String handleHTTPPut(HTTPRequest request) throws PluginHTTPException {
-		return makeUriPage();
-	}
-
 	/* pages */
 	private String makeUriPage() {
 		HTMLNode pageNode = getPageNode();
