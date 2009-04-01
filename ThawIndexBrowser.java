@@ -8,11 +8,15 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.util.Enumeration;
 
+import com.db4o.ObjectContainer;
+
 import plugins.ThawIndexBrowser.nanoxml.XMLElement;
 import plugins.ThawIndexBrowser.nanoxml.XMLParseException;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.async.DBJob;
+import freenet.client.async.ClientContext;
 import freenet.clients.http.PageMaker;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
@@ -28,6 +32,7 @@ import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.NativeThread;
 
 public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredPluginHTTP, FredPluginVersioned, FredPluginL10n {
 
@@ -87,11 +92,9 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 		if (request.getPartAsString("add", 128).length() > 0) {
 			String downloadkey = request.getPartAsString("uri", 1024);
 			try {
-				fcp.makePersistentGlobalRequest(new FreenetURI(downloadkey), null, "forever", "disk");
+				tryAddToQueue(new FreenetURI(downloadkey));
 			} catch (MalformedURLException e) {
-				Logger.error(this, "TODO", e);
-			} catch (NotAllowedException e) {
-				Logger.error(this, "TODO", e);
+				Logger.error(this, "TODO", e); // TODO better handling, an error page?
 			}
 			return makeIndexPage(uri, false);
 		} else {
@@ -284,11 +287,7 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 					try {
 						FreenetURI u = new FreenetURI(s);
 						if (add) {
-							try {
-								fcp.makePersistentGlobalRequest(u, null, "forever", "disk");
-							} catch (NotAllowedException e1) {
-								Logger.error(this, "DEBUG", e1);
-							}
+							tryAddToQueue(u);
 						}
 
 						if (s.length() > 100) {
@@ -331,6 +330,26 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 		return pageNode.generate();
 	}
 	
+	private void tryAddToQueue(final FreenetURI fetchURI) {
+		
+		pr.getNode().clientCore.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				try {
+					fcp.makePersistentGlobalRequest(fetchURI, null, "forever", "disk", container);
+				} catch (NotAllowedException e) {
+					Logger.normal(this, "Failed to make persistent request: "+e, e);
+				} catch (IOException e) {
+					Logger.normal(this, "Failed to make persistent request: "+e, e);
+				} catch (Throwable t) {
+					// Unexpected and severe, might even be OOM, just log it.
+					Logger.error(this, "Failed to make persistent request: "+t, t);
+				}
+			}
+			
+		}, NativeThread.HIGH_PRIORITY, false);
+	}
+
 	private HTMLNode createAddCell(String key, String uri) {
 		HTMLNode deleteNode = new HTMLNode("td");
 		HTMLNode deleteForm = pr.addFormChild(deleteNode, SELF_URI, "addForm-" + key.hashCode());
