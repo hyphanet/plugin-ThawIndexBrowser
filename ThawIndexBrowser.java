@@ -25,6 +25,7 @@ import freenet.node.fcp.NotAllowedException;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginHTTP;
 import freenet.pluginmanager.FredPluginL10n;
+import freenet.pluginmanager.FredPluginRealVersioned;
 import freenet.pluginmanager.FredPluginThreadless;
 import freenet.pluginmanager.FredPluginVersioned;
 import freenet.pluginmanager.PluginHTTPException;
@@ -34,7 +35,7 @@ import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.NativeThread;
 
-public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredPluginHTTP, FredPluginVersioned, FredPluginL10n {
+public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredPluginHTTP, FredPluginVersioned, FredPluginRealVersioned, FredPluginL10n {
 
 	public static String SELF_URI = "/plugins/plugins.ThawIndexBrowser.ThawIndexBrowser/";
 
@@ -378,6 +379,10 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 		return "0.1 r"+Version.getSvnRevision();
 	}
 	
+	public long getRealVersion() {
+		return Version.getVersion();
+	}
+
 	public static void main(String[] args) {
 		ThawIndexBrowser tib = new ThawIndexBrowser();
 		System.out.println("=====");
