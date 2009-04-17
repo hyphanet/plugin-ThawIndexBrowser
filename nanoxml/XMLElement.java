@@ -145,7 +145,7 @@ public class XMLElement
      *     <li>The keys and the values are strings.
      * </ul></dd></dl>
      */
-    private Hashtable attributes;
+    private Hashtable<String, String> attributes;
 
 
     /**
@@ -158,7 +158,7 @@ public class XMLElement
      *         or a subclass of <code>XMLElement</code>.
      * </ul></dd></dl>
      */
-    private Vector children;
+    private Vector<XMLElement> children;
 
 
     /**
@@ -479,8 +479,8 @@ public class XMLElement
         this.ignoreCase = ignoreCase2;
         this.name = null;
         this.contents = "";
-        this.attributes = new Hashtable();
-        this.children = new Vector();
+        this.attributes = new Hashtable<String, String>();
+        this.children = new Vector<XMLElement>();
         this.entities = entities2;
         this.lineNr = 0;
         Enumeration e = this.entities.keys();
@@ -748,7 +748,7 @@ public class XMLElement
      *                                             java.lang.String, boolean)
      *         getBooleanAttribute(String, String, String, boolean)
      */
-    public Enumeration enumerateAttributeNames()
+    public Enumeration<String> enumerateAttributeNames()
     {
         return this.attributes.keys();
     }
@@ -768,7 +768,7 @@ public class XMLElement
      * @see nanoxml.XMLElement#removeChild(nanoxml.XMLElement)
      *         removeChild(XMLElement)
      */
-    public Enumeration enumerateChildren()
+    public Enumeration<XMLElement> enumerateChildren()
     {
         return this.children.elements();
     }
@@ -1122,7 +1122,7 @@ public class XMLElement
         if (this.ignoreCase) {
             name = name.toUpperCase();
         }
-        String value = (String) this.attributes.get(name);
+        String value = this.attributes.get(name);
         if (value == null) {
             return defaultValue;
         } else {
@@ -1259,7 +1259,7 @@ public class XMLElement
         if (this.ignoreCase) {
             name = name.toUpperCase();
         }
-        String value = (String) this.attributes.get(name);
+        String value = this.attributes.get(name);
         if (value == null) {
             return defaultValue;
         } else {
@@ -1463,8 +1463,8 @@ public class XMLElement
     {
         this.name = null;
         this.contents = "";
-        this.attributes = new Hashtable();
-        this.children = new Vector();
+        this.attributes = new Hashtable<String, String>();
+        this.children = new Vector<XMLElement>();
         this.charReadTooMuch = '\0';
         this.reader = reader2;
         this.parserLineNr = startingLineNr;
@@ -1856,7 +1856,8 @@ public class XMLElement
      *
      * @see nanoxml.XMLElement#write(java.io.Writer) write(Writer)
      */
-    public String toString()
+    @Override
+	public String toString()
     {
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -1897,11 +1898,11 @@ public class XMLElement
         writer.write('<');
         writer.write(this.name);
         if (! this.attributes.isEmpty()) {
-            Enumeration e = this.attributes.keys();
+            Enumeration<String> e = this.attributes.keys();
             while (e.hasMoreElements()) {
                 writer.write(' ');
-                String key = (String) e.nextElement();
-                String value = (String) this.attributes.get(key);
+                String key = e.nextElement();
+                String value = this.attributes.get(key);
                 writer.write(key);
                 writer.write('='); writer.write('"');
                 this.writeEncoded(writer, value);
@@ -1918,9 +1919,9 @@ public class XMLElement
             writer.write('/'); writer.write('>');
         } else {
             writer.write('>');
-            Enumeration e = this.enumerateChildren();
+            Enumeration<XMLElement> e = this.enumerateChildren();
             while (e.hasMoreElements()) {
-                XMLElement child = (XMLElement) e.nextElement();
+                XMLElement child = e.nextElement();
                 child.write(writer);
             }
             writer.write('<'); writer.write('/');
@@ -1972,7 +1973,7 @@ public class XMLElement
                     writer.write('o'); writer.write('s'); writer.write(';');
                     break;
                 default:
-                    int unicode = (int) ch;
+                    int unicode = ch;
                     if ((unicode < 32) || (unicode > 126)) {
                         writer.write('&'); writer.write('#');
                         writer.write('x');
