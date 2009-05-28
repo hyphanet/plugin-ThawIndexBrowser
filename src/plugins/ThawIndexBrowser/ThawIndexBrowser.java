@@ -17,7 +17,10 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.async.DBJob;
 import freenet.client.async.ClientContext;
+import freenet.client.async.DatabaseDisabledException;
+import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
+import freenet.clients.http.PageNode;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n.LANGUAGE;
 import freenet.node.fcp.FCPServer;
@@ -55,8 +58,6 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 
 		pm = pr.getPageMaker();
 
-		pm.addNavigationLink("/", "Fproxy", "Back to Fpoxy", false, null);
-
 		client = pr.getHLSimpleClient();
 		
 		fcp = pr.getNode().clientCore.getFCPServer();
@@ -67,9 +68,10 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 	}
 
 	private HTMLNode createErrorBox(String title, String errmsg) {
-		HTMLNode errorBox = pm.getInfobox("infobox-alert", title);
+		InfoboxNode infobox = pm.getInfobox("infobox-alert", title);
+		HTMLNode errorBox = infobox.content;
 		errorBox.addChild("#", errmsg);
-		return errorBox;
+		return infobox.outer;
 	}
 
 	public String handleHTTPGet(HTTPRequest request) throws PluginHTTPException {
@@ -105,8 +107,9 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 
 	/* pages */
 	private String makeUriPage() {
-		HTMLNode pageNode = getPageNode();
-		HTMLNode contentNode = pm.getContentNode(pageNode);
+		PageNode page = getPageNode();
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		contentNode.addChild(createUriBox());
 		return pageNode.generate();
 	}
@@ -116,16 +119,18 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 	}
 
 	private String makeErrorPage(String title, String error) {
-		HTMLNode pageNode = getPageNode();
-		HTMLNode contentNode = pm.getContentNode(pageNode);
+		PageNode page = getPageNode();
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		contentNode.addChild(createErrorBox(title, error));
 		contentNode.addChild(createUriBox());
 		return pageNode.generate();
 	}
 
 	private String makeErrorPage(String title, String error, String newUri) {
-		HTMLNode pageNode = getPageNode();
-		HTMLNode contentNode = pm.getContentNode(pageNode);
+		PageNode page = getPageNode();
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 		HTMLNode errorBox = createErrorBox(title, error);
 		errorBox.addChild("BR");
 		errorBox.addChild(new HTMLNode("a", "href", SELF_URI + "?key=" + newUri, newUri));
@@ -134,7 +139,7 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 		return pageNode.generate();
 	}
 
-	private HTMLNode getPageNode() {
+	private PageNode getPageNode() {
 		return pm.getPageNode("Thaw-Index Browser", null);
 	}
 
@@ -191,8 +196,9 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 
 	/* page utils */
 	private HTMLNode createUriBox() {
-		HTMLNode browseBox = pm.getInfobox("Open an Index");
-		HTMLNode browseContent = pm.getContentNode(browseBox);
+		InfoboxNode infobox = pm.getInfobox("Open an Index");
+		HTMLNode browseBox = infobox.outer;
+		HTMLNode browseContent = infobox.content;
 		// browseContent.addChild("#", "Display the top level chunk as
 		// hexprint");
 		HTMLNode browseForm = pr.addFormChild(browseContent, SELF_URI, "uriForm");
@@ -204,14 +210,18 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 	}
 
 	private String printIndexPage(FreenetURI uri, XMLElement doc, boolean add) {
-		HTMLNode pageNode = getPageNode();
-		HTMLNode contentNode = pm.getContentNode(pageNode);
+		PageNode page = getPageNode();
+		HTMLNode pageNode = page.outer;
+		HTMLNode contentNode = page.content;
 
 		XMLElement root = doc;
 
-		HTMLNode titleBox = pm.getInfobox("Index: " + uri);
-		HTMLNode indexBox = pm.getInfobox("Links:");
-		HTMLNode fileBox = pm.getInfobox("Files:");
+		InfoboxNode title = pm.getInfobox("Index: " + uri);
+		HTMLNode titleBox = title.content;
+		InfoboxNode index = pm.getInfobox("Index: " + uri);
+		HTMLNode indexBox = index.content;
+		InfoboxNode fileInfobox = pm.getInfobox("Files:");
+		HTMLNode fileBox = fileInfobox.content;
 
 		HTMLNode table = new HTMLNode("table", "class", "requests");
 		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
@@ -321,11 +331,11 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 			}
 		}
 
-		contentNode.addChild(titleBox);
-		contentNode.addChild(indexBox);
+		contentNode.addChild(title.outer);
+		contentNode.addChild(index.outer);
 
 		if (hasfiles)
-			contentNode.addChild(fileBox);
+			contentNode.addChild(fileInfobox.outer);
 
 		contentNode.addChild(createUriBox());
 		return pageNode.generate();
@@ -333,22 +343,28 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 	
 	private void tryAddToQueue(final FreenetURI fetchURI) {
 		
-		pr.getNode().clientCore.clientContext.jobRunner.queue(new DBJob() {
+		try {
+			pr.getNode().clientCore.clientContext.jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
-				try {
-					fcp.makePersistentGlobalRequest(fetchURI, null, "forever", "disk", container);
-				} catch (NotAllowedException e) {
-					Logger.normal(this, "Failed to make persistent request: "+e, e);
-				} catch (IOException e) {
-					Logger.normal(this, "Failed to make persistent request: "+e, e);
-				} catch (Throwable t) {
-					// Unexpected and severe, might even be OOM, just log it.
-					Logger.error(this, "Failed to make persistent request: "+t, t);
+				public boolean run(ObjectContainer container, ClientContext context) {
+					try {
+						fcp.makePersistentGlobalRequest(fetchURI, null, "forever", "disk", container);
+					} catch (NotAllowedException e) {
+						Logger.normal(this, "Failed to make persistent request: "+e, e);
+					} catch (IOException e) {
+						Logger.normal(this, "Failed to make persistent request: "+e, e);
+					} catch (Throwable t) {
+						// Unexpected and severe, might even be OOM, just log it.
+						Logger.error(this, "Failed to make persistent request: "+t, t);
+					}
+					return true;
 				}
-			}
-			
-		}, NativeThread.HIGH_PRIORITY, false);
+				
+			}, NativeThread.HIGH_PRIORITY, false);
+		} catch (DatabaseDisabledException e) {
+			// :(
+			// We don't handle other errors well, so lets not handle this well either. :|
+		}
 	}
 
 	private HTMLNode createAddCell(String key, String uri) {
