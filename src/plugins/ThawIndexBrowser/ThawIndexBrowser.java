@@ -348,7 +348,7 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 
 				public boolean run(ObjectContainer container, ClientContext context) {
 					try {
-						fcp.makePersistentGlobalRequest(fetchURI, null, "forever", "disk", container);
+						fcp.makePersistentGlobalRequest(fetchURI, false, null, "forever", "disk", container);
 					} catch (NotAllowedException e) {
 						Logger.normal(this, "Failed to make persistent request: "+e, e);
 					} catch (IOException e) {
