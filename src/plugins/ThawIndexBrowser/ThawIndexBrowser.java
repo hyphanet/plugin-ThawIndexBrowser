@@ -368,6 +368,8 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 	}
 
 	private HTMLNode createAddCell(String key, String uri) {
+		// FIXME let the user select the downloads dir, like on the Queue page.
+		// We could use the same form that the queue page does.
 		HTMLNode deleteNode = new HTMLNode("td");
 		HTMLNode deleteForm = pr.addFormChild(deleteNode, SELF_URI, "addForm-" + key.hashCode());
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "uri", key });
@@ -377,6 +379,8 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 	}
 	
 	private HTMLNode createAddAllCell(String uri) {
+		// FIXME let the user select the downloads dir, like on the Queue page.
+		// We'd need to come back here, or possibly convert it to use the same structure as the download keys box. 
 		HTMLNode deleteNode = new HTMLNode("td");
 		HTMLNode deleteForm = pr.addFormChild(deleteNode, SELF_URI, "addForm-all");
 		deleteForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", uri });
