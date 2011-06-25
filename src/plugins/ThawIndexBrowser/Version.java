@@ -15,7 +15,7 @@ public class Version {
 	 * a major change, a significant bugfix etc. These numbers are used in auto-update 
 	 * etc, at a minimum any build inserted into auto-update should have a unique 
 	 * version. */
-	public static long version = 4;
+	public static long version = 5;
 	
 	static String getSvnRevision() {
 		return svnRevision;
