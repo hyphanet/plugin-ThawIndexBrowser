@@ -8,23 +8,18 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.util.Enumeration;
 
-import com.db4o.ObjectContainer;
-
 import plugins.ThawIndexBrowser.nanoxml.XMLElement;
 import plugins.ThawIndexBrowser.nanoxml.XMLParseException;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
-import freenet.client.async.DBJob;
-import freenet.client.async.ClientContext;
-import freenet.client.async.DatabaseDisabledException;
+import freenet.clients.fcp.FCPServer;
+import freenet.clients.fcp.NotAllowedException;
 import freenet.clients.http.InfoboxNode;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.PageNode;
 import freenet.keys.FreenetURI;
 import freenet.l10n.BaseL10n.LANGUAGE;
-import freenet.node.fcp.FCPServer;
-import freenet.node.fcp.NotAllowedException;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginHTTP;
 import freenet.pluginmanager.FredPluginL10n;
@@ -36,7 +31,6 @@ import freenet.pluginmanager.PluginRespirator;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
-import freenet.support.io.NativeThread;
 
 public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredPluginHTTP, FredPluginVersioned, FredPluginRealVersioned, FredPluginL10n {
 
@@ -170,14 +164,14 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 		} catch (FetchException e) {
 			Logger.error(this, "Fetch failed for: " + index, e);
 			switch (e.mode) {
-				case FetchException.PERMANENT_REDIRECT:
-				case FetchException.TOO_MANY_PATH_COMPONENTS:
+				case PERMANENT_REDIRECT:
+				case TOO_MANY_PATH_COMPONENTS:
 					return makeErrorPage("Fetch failed for: " + index, "(Code: " + e.mode + ") " + e.getLocalizedMessage(),
 							e.newURI.toString());
-				case FetchException.DATA_NOT_FOUND:
-				case FetchException.ROUTE_NOT_FOUND:
-				case FetchException.REJECTED_OVERLOAD:	
-				case FetchException.ALL_DATA_NOT_FOUND:
+				case DATA_NOT_FOUND:
+				case ROUTE_NOT_FOUND:
+				case REJECTED_OVERLOAD:
+				case ALL_DATA_NOT_FOUND:
 					return makeErrorPage("Fetch failed for: " + index, "(Code: " + e.mode + ") " + e.getLocalizedMessage(), index);
 				default:
 					return makeErrorPage("Fetch failed for: " + index, "(Code: " + e.mode + ") " + e.getLocalizedMessage());
@@ -340,30 +334,14 @@ public class ThawIndexBrowser implements FredPlugin, FredPluginThreadless, FredP
 		contentNode.addChild(createUriBox());
 		return pageNode.generate();
 	}
-	
-	private void tryAddToQueue(final FreenetURI fetchURI) {
-		
-		try {
-			pr.getNode().clientCore.clientContext.jobRunner.queue(new DBJob() {
 
-				public boolean run(ObjectContainer container, ClientContext context) {
-					try {
-						fcp.makePersistentGlobalRequest(fetchURI, false, null, "forever", "disk", false, container, pr.getNode().clientCore.getDownloadsDir());
-					} catch (NotAllowedException e) {
-						Logger.normal(this, "Failed to make persistent request: "+e, e);
-					} catch (IOException e) {
-						Logger.normal(this, "Failed to make persistent request: "+e, e);
-					} catch (Throwable t) {
-						// Unexpected and severe, might even be OOM, just log it.
-						Logger.error(this, "Failed to make persistent request: "+t, t);
-					}
-					return true;
-				}
-				
-			}, NativeThread.HIGH_PRIORITY, false);
-		} catch (DatabaseDisabledException e) {
-			// :(
-			// We don't handle other errors well, so lets not handle this well either. :|
+	private void tryAddToQueue(final FreenetURI fetchURI) {
+		try {
+			fcp.makePersistentGlobalRequest(fetchURI, false, null, "forever", "disk", false, pr.getNode().clientCore.getDownloadsDir());
+		} catch (IOException e) {
+			Logger.error(this, "Failed to make persistent request: "+e, e);
+		} catch (NotAllowedException e) {
+			Logger.error(this, "Failed to make persistent request: "+e, e);
 		}
 	}
 
